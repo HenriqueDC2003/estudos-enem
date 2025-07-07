@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plano de Estudos Interativo ENEM 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Focus -->
+    <!-- Application Structure Plan: A dashboard-style SPA. The structure prioritizes user flow over mirroring the original document's linear table. It starts with a high-level overview (weekly plan and a chart visualizing study load per subject) to orient the user. The core interaction is a drill-down navigation system: users select a major knowledge area (e.g., 'Ciências da Natureza') from a persistent top navigation bar. This action populates the main content area with subject cards ('Biologia', 'Física', 'Química'). Clicking a subject card drills down further, displaying a list of its specific topics and playlist links. A 'Voltar' button allows easy navigation back to the subject selection. This hierarchical, task-oriented structure prevents information overload, makes content discovery intuitive on both desktop and mobile, and allows the user to focus on one area at a time, which is more effective for studying. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Weekly study schedule. Goal: Inform. Viz/Method: HTML/Tailwind styled cards in a grid. Interaction: Static visual guide. Justification: Provides an immediate, easy-to-understand reference for the user's weekly routine.
+        - Report Info: The number of essential topics per subject. Goal: Compare study load. Viz/Method: Horizontal Bar Chart using Chart.js/Canvas. Interaction: Dynamic tooltips on hover. Justification: Offers a quick, quantitative overview of the study plan's scope, helping the user visually prioritize or plan their time. The horizontal format prevents label clutter.
+        - Report Info: All subjects, topics, and playlist URLs with progress tracking. Goal: Organize, provide access, and track progress. Viz/Method: Interactive navigation with dynamically rendered HTML cards and lists, now including checkboxes and progress bars. Interaction: Multi-level drill-down (Area -> Subject -> Topics/Playlists) with stateful checkboxes that update progress bars in real-time. Justification: This is the core interactive element, transforming a long, static table into an engaging and focused exploration and tracking tool. It structures the information logically, reduces cognitive load, and streamlines access to the study material while providing clear feedback on completion. Library/Method: Vanilla JS for DOM manipulation, state handling, and localStorage for persistence.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfaf6;
+            color: #4a4a4a;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 500px;
+            max-height: 60vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 600px;
+            }
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+        }
+        .nav-button.active {
+            background-color: #e58968;
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .progress-bar {
+            background-color: #e0e0e0;
+            border-radius: 9999px;
+            overflow: hidden;
+            height: 8px;
+        }
+        .progress-bar-fill {
+            background-color: #e58968;
+            height: 100%;
+            transition: width 0.5s ease-in-out;
+        }
+        .topic-item input:checked + label {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="container mx-auto px-4 py-4">
+            <h1 class="text-2xl md:text-3xl font-bold text-center text-[#d37b58]">Plano de Estudos Interativo ENEM 2025</h1>
+            <p class="text-center text-gray-500 mt-1">Seu guia gratuito e completo para a aprovação.</p>
+        </div>
+        <nav id="main-nav" class="bg-[#f7e9dc] py-2">
+            <div class="container mx-auto px-4 flex flex-wrap justify-center gap-2">
+                <button data-view="dashboard" class="nav-button active text-sm md:text-base px-4 py-2 rounded-full bg-white hover:bg-[#e58968] hover:text-white">🚀 Início</button>
+                <button data-view="natureza" class="nav-button text-sm md:text-base px-4 py-2 rounded-full bg-white hover:bg-[#e58968] hover:text-white">🌿 Natureza</button>
+                <button data-view="humanas" class="nav-button text-sm md:text-base px-4 py-2 rounded-full bg-white hover:bg-[#e58968] hover:text-white">🌍 Humanas</button>
+                <button data-view="linguagens" class="nav-button text-sm md:text-base px-4 py-2 rounded-full bg-white hover:bg-[#e58968] hover:text-white">📚 Linguagens</button>
+                <button data-view="matematica" class="nav-button text-sm md:text-base px-4 py-2 rounded-full bg-white hover:bg-[#e58968] hover:text-white">🔢 Matemática</button>
+            </div>
+        </nav>
+    </header>
+
+    <main id="content-area" class="container mx-auto p-4 md:p-8">
+    </main>
+    
+    <footer class="text-center py-6 bg-white shadow-inner mt-8">
+        <p class="text-gray-500">Desenvolvido para te ajudar a conquistar seus sonhos. Bons estudos!</p>
+    </footer>
+
+    <script>
+        let studyPlanData = {
+            natureza: {
+                title: 'Ciências da Natureza', icon: '🌿',
+                subjects: {
+                    'Biologia': {
+                        playlist_url: 'https://www.youtube.com/c/BiologiaTotalcomProfJubilut/playlists',
+                        topics: [
+                            { name: 'Ecologia e Problemas Ambientais', completed: false }, { name: 'Genética e Leis de Mendel', completed: false }, { name: 'Citologia (Membrana, Organelas)', completed: false }, { name: 'Fisiologia Humana', completed: false }, { name: 'Evolução', completed: false }, { name: 'Biotecnologia', completed: false }
+                        ]
+                    },
+                    'Física': {
+                        playlist_url: 'https://www.youtube.com/c/fisicatotal/playlists',
+                        topics: [
+                            { name: 'Mecânica (Cinemática, Dinâmica, Energia)', completed: false }, { name: 'Eletrodinâmica (Circuitos, Potência)', completed: false }, { name: 'Ondulatória', completed: false }, { name: 'Termologia', completed: false }, { name: 'Óptica Geométrica', completed: false }
+                        ]
+                    },
+                    'Química': {
+                        playlist_url: 'https://www.youtube.com/c/quimicaemacao/playlists',
+                        topics: [
+                            { name: 'Química Geral (Atomística, Tabela, Ligações)', completed: false }, { name: 'Físico-Química (Soluções, Cinética, Equilíbrio)', completed: false }, { name: 'Química Orgânica (Funções, Isomeria, Reações)', completed: false }, { name: 'Eletroquímica (Pilhas e Eletrólise)', completed: false }, { name: 'Química Ambiental (Poluição, Lixo)', completed: false }
+                        ]
+                    }
+                }
+            },
+            humanas: {
+                title: 'Ciências Humanas', icon: '🌍',
+                subjects: {
+                    'História': {
+                        playlist_url: 'https://www.youtube.com/c/Parabolica/playlists',
+                        topics: [
+                            { name: 'Brasil Colônia', completed: false }, { name: 'Brasil Império', completed: false }, { name: 'República Velha', completed: false }, { name: 'Era Vargas', completed: false }, { name: 'Ditadura Militar', completed: false }, { name: 'Antiguidade Clássica (Grécia e Roma)', completed: false }, { name: 'Idade Média e Feudalismo', completed: false }, { name: 'Revoluções (Industrial e Francesa)', completed: false }, { name: 'Guerras Mundiais e Guerra Fria', completed: false }
+                        ]
+                    },
+                    'Geografia': {
+                        playlist_url: 'https://www.youtube.com/c/JeanGrafia/playlists',
+                        topics: [
+                            { name: 'Globalização e Blocos Econômicos', completed: false }, { name: 'Geografia Agrária e Urbanização', completed: false }, { name: 'Clima, Relevo e Biomas do Brasil', completed: false }, { name: 'Geopolítica Mundial', completed: false }, { name: 'Fontes de Energia', completed: false }, { name: 'Cartografia', completed: false }
+                        ]
+                    },
+                    'Filosofia': {
+                        playlist_url: 'https://www.youtube.com/c/Parabolica/playlists',
+                        topics: [
+                            { name: 'Filosofia Antiga (Pré-socráticos a Aristóteles)', completed: false }, { name: 'Filosofia Medieval', completed: false }, { name: 'Filosofia Moderna (Racionalismo e Empirismo)', completed: false }, { name: 'Filosofia Política (Contratualistas)', completed: false }, { name: 'Iluminismo e Kant', completed: false }, { name: 'Escola de Frankfurt', completed: false }
+                        ]
+                    },
+                    'Sociologia': {
+                        playlist_url: 'https://www.youtube.com/c/Parabolica/playlists',
+                        topics: [
+                            { name: 'Clássicos da Sociologia (Comte, Durkheim, Weber, Marx)', completed: false }, { name: 'Indústria Cultural e Cultura de Massa', completed: false }, { name: 'Mundo do Trabalho', completed: false }, { name: 'Cidadania e Movimentos Sociais', completed: false }, { name: 'Estratificação Social', completed: false }
+                        ]
+                    }
+                }
+            },
+            linguagens: {
+                title: 'Linguagens, Códigos e suas Tecnologias', icon: '📚',
+                subjects: {
+                    'Português': {
+                        playlist_url: 'https://www.youtube.com/c/ProfessorPamba/playlists',
+                        topics: [
+                            { name: 'Interpretação de Texto', completed: false }, { name: 'Funções da Linguagem', completed: false }, { name: 'Variação Linguística', completed: false }, { name: 'Figuras de Linguagem', completed: false }, { name: 'Coesão e Coerência', completed: false }, { name: 'Tipos e Gêneros Textuais', completed: false }
+                        ]
+                    },
+                    'Literatura': {
+                        playlist_url: 'https://www.youtube.com/c/Parabolica/playlists',
+                        topics: [
+                            { name: 'Quinhentismo, Barroco e Arcadismo', completed: false }, { name: 'Romantismo e Realismo/Naturalismo', completed: false }, { name: 'Parnasianismo e Simbolismo', completed: false }, { name: 'Pré-Modernismo', completed: false }, { name: 'Modernismo (1ª, 2ª e 3ª Fases)', completed: false }, { name: 'Tendências Contemporâneas', completed: false }
+                        ]
+                    },
+                    'Redação': {
+                        playlist_url: 'https://www.youtube.com/c/LumaEPonto/playlists',
+                        topics: [
+                            { name: 'Estrutura Dissertativo-Argumentativa', completed: false }, { name: 'Competência 1: Norma Padrão', completed: false }, { name: 'Competência 2: Tema e Repertório', completed: false }, { name: 'Competência 3: Coerência e Argumentação', completed: false }, { name: 'Competência 4: Coesão Textual', completed: false }, { name: 'Competência 5: Proposta de Intervenção', completed: false }
+                        ]
+                    }
+                }
+            },
+            matematica: {
+                title: 'Matemática e suas Tecnologias', icon: '🔢',
+                subjects: {
+                    'Matemática': {
+                        playlist_url: 'https://www.youtube.com/c/matematicario/playlists',
+                        topics: [
+                            { name: 'Matemática Básica (Operações, Frações)', completed: false }, { name: 'Razão, Proporção e Regra de Três', completed: false }, { name: 'Porcentagem e Juros', completed: false }, { name: 'Funções de 1º e 2º Grau', completed: false }, { name: 'Análise Combinatória', completed: false }, { name: 'Probabilidade', completed: false }, { name: 'Geometria Plana (Áreas)', completed: false }, { name: 'Geometria Espacial (Volumes)', completed: false }, { name: 'Estatística (Média, Moda, Mediana)', completed: false }
+                        ]
+                    }
+                }
+            }
+        };
+
+        const contentArea = document.getElementById('content-area');
+        const mainNav = document.getElementById('main-nav');
+        let currentView = 'dashboard';
+        let previousView = 'dashboard';
+        let currentArea = null;
+
+        const weeklyPlan = [
+            { day: 'Segunda', subjects: 'Matemática e Química', color: 'bg-blue-100' },
+            { day: 'Terça', subjects: 'História e Biologia', color: 'bg-green-100' },
+            { day: 'Quarta', subjects: 'Redação e Física', color: 'bg-yellow-100' },
+            { day: 'Quinta', subjects: 'Geografia e Linguagens', color: 'bg-purple-100' },
+            { day: 'Sexta', subjects: 'Filosofia/Sociologia e Revisão', color: 'bg-red-100' },
+            { day: 'Sábado', subjects: 'Simulados e Exercícios', color: 'bg-indigo-100' },
+            { day: 'Domingo', subjects: 'Descanso e Correção', color: 'bg-gray-100' },
+        ];
+        
+        function saveProgress() {
+            localStorage.setItem('enemStudyProgress', JSON.stringify(studyPlanData));
+        }
+
+        function loadProgress() {
+            const savedProgress = localStorage.getItem('enemStudyProgress');
+            if (savedProgress) {
+                studyPlanData = JSON.parse(savedProgress);
+            }
+        }
+
+        function calculateProgress(areaKey, subjectKey) {
+            const subject = studyPlanData[areaKey].subjects[subjectKey];
+            const totalTopics = subject.topics.length;
+            if (totalTopics === 0) return { completed: 0, total: 0, percentage: 0 };
+            
+            const completedTopics = subject.topics.filter(topic => topic.completed).length;
+            const percentage = Math.round((completedTopics / totalTopics) * 100);
+            return { completed: completedTopics, total: totalTopics, percentage: percentage };
+        }
+
+        function renderDashboard() {
+            contentArea.innerHTML = `
+                <section id="weekly-plan" class="mb-12">
+                    <h2 class="text-2xl font-bold text-center mb-2">Seu Plano de Estudos Semanal</h2>
+                    <p class="text-center text-gray-600 max-w-2xl mx-auto mb-6">Esta é uma sugestão para organizar sua rotina. A consistência é a chave para o sucesso! Sinta-se livre para adaptar ao seu ritmo.</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                        ${weeklyPlan.map(item => `
+                            <div class="p-4 rounded-lg text-center ${item.color} shadow">
+                                <p class="font-bold text-gray-800">${item.day}</p>
+                                <p class="text-sm text-gray-600">${item.subjects}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </section>
+                <section id="overview-chart" class="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-bold text-center mb-2">Visão Geral dos Conteúdos</h2>
+                    <p class="text-center text-gray-600 max-w-2xl mx-auto mb-6">Este gráfico mostra a quantidade de tópicos essenciais por matéria para te ajudar a visualizar o volume de estudo em cada área. Use-o para planejar seu tempo de forma estratégica.</p>
+                    <div class="chart-container">
+                        <canvas id="topicsChart"></canvas>
+                    </div>
+                </section>
+            `;
+            renderChart();
+        }
+
+        function renderArea(areaKey) {
+            const area = studyPlanData[areaKey];
+            if (!area) return;
+            
+            contentArea.innerHTML = `
+                <header class="text-center mb-8">
+                    <h2 class="text-3xl font-bold">${area.icon} ${area.title}</h2>
+                    <p class="text-gray-600 mt-2 max-w-2xl mx-auto">Explore as matérias desta grande área. Clique em uma matéria para ver a lista de conteúdos, marcar seu progresso e acessar as playlists de estudo.</p>
+                </header>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${Object.keys(area.subjects).map(subjectKey => {
+                        const progress = calculateProgress(areaKey, subjectKey);
+                        return `
+                        <div class="card bg-white p-6 rounded-lg shadow-md cursor-pointer hover:bg-[#fff9f2]" data-subject="${subjectKey}" data-area="${areaKey}">
+                            <h3 class="text-xl font-bold text-[#d37b58]">${subjectKey}</h3>
+                            <div class="mt-4">
+                                <div class="flex justify-between items-center text-sm text-gray-500 mb-1">
+                                    <span>Progresso</span>
+                                    <span>${progress.completed}/${progress.total}</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" style="width: ${progress.percentage}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `}).join('')}
+                </div>
+            `;
+
+            document.querySelectorAll('.card[data-subject]').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const subjectKey = e.currentTarget.dataset.subject;
+                    const areaKey = e.currentTarget.dataset.area;
+                    previousView = currentView;
+                    currentView = 'topics';
+                    currentArea = areaKey;
+                    renderTopics(areaKey, subjectKey);
+                });
+            });
+        }
+        
+        function renderTopics(areaKey, subjectKey) {
+            const subject = studyPlanData[areaKey].subjects[subjectKey];
+            const area = studyPlanData[areaKey];
+            if (!subject) return;
+
+            contentArea.innerHTML = `
+                <header class="mb-8">
+                    <button id="back-button" class="flex items-center gap-2 mb-4 text-gray-600 hover:text-[#d37b58] font-semibold">
+                        <span class="text-xl">←</span> Voltar para ${area.title}
+                    </button>
+                    <h2 class="text-3xl font-bold">${area.icon} ${subjectKey}</h2>
+                    <p class="text-gray-600 mt-2">Marque os conteúdos que já estudou e clique em "Playlist" para abrir a lista de aulas da matéria no YouTube.</p>
+                </header>
+                <div id="topics-list" class="space-y-3">
+                    ${subject.topics.map((topic, index) => `
+                        <div class="topic-item bg-white p-4 rounded-lg shadow-md flex items-center gap-4">
+                            <input type="checkbox" id="topic-${areaKey}-${subjectKey}-${index}" data-area="${areaKey}" data-subject="${subjectKey}" data-topic-index="${index}" class="h-5 w-5 rounded border-gray-300 text-[#e58968] focus:ring-[#d37b58]" ${topic.completed ? 'checked' : ''}>
+                            <label for="topic-${areaKey}-${subjectKey}-${index}" class="flex-1 font-semibold text-gray-700 cursor-pointer">${topic.name}</label>
+                            <a href="${subject.playlist_url}" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-white bg-[#e58968] px-3 py-1 rounded-full hover:bg-[#d37b58] transition-colors">▶️ Playlist</a>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('back-button').addEventListener('click', () => {
+                currentView = previousView;
+                currentArea = null;
+                updateView();
+            });
+
+            document.getElementById('topics-list').addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox') {
+                    const area = e.target.dataset.area;
+                    const subject = e.target.dataset.subject;
+                    const index = e.target.dataset.topicIndex;
+                    studyPlanData[area].subjects[subject].topics[index].completed = e.target.checked;
+                    saveProgress();
+                }
+            });
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('topicsChart').getContext('2d');
+            const subjects = [];
+            const topicsCount = [];
+
+            Object.values(studyPlanData).forEach(area => {
+                Object.entries(area.subjects).forEach(([subjectName, subjectData]) => {
+                    subjects.push(subjectName);
+                    topicsCount.push(subjectData.topics.length);
+                });
+            });
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: subjects,
+                    datasets: [{
+                        label: 'Nº de Tópicos Essenciais',
+                        data: topicsCount,
+                        backgroundColor: 'rgba(229, 137, 104, 0.6)',
+                        borderColor: 'rgba(211, 123, 88, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#4a4a4a',
+                            titleFont: {
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 14
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += context.parsed.x;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateView() {
+            mainNav.querySelectorAll('.nav-button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === currentView);
+            });
+            
+            if(currentView === 'dashboard') {
+                renderDashboard();
+            } else if (studyPlanData[currentView]) {
+                 renderArea(currentView);
+            }
+        }
+        
+        mainNav.addEventListener('click', (e) => {
+            if (e.target.matches('.nav-button')) {
+                const view = e.target.dataset.view;
+                if(view !== currentView || currentArea !== null) {
+                    currentView = view;
+                    currentArea = null;
+                    updateView();
+                }
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProgress();
+            renderDashboard();
+        });
+    </script>
+</body>
+</html>
