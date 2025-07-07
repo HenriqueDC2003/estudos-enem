@@ -14,7 +14,7 @@
     <!-- Visualization & Content Choices: 
         - Report Info: Weekly study schedule. Goal: Inform. Viz/Method: HTML/Tailwind styled cards in a grid. Interaction: Static visual guide. Justification: Provides an immediate, easy-to-understand reference for the user's weekly routine.
         - Report Info: The number of essential topics per subject. Goal: Compare study load. Viz/Method: Horizontal Bar Chart using Chart.js/Canvas. Interaction: Dynamic tooltips on hover. Justification: Offers a quick, quantitative overview of the study plan's scope, helping the user visually prioritize or plan their time. The horizontal format prevents label clutter.
-        - Report Info: All subjects, topics, and playlist URLs with progress tracking. Goal: Organize, provide access, and track progress. Viz/Method: Interactive navigation with dynamically rendered HTML cards and lists, now including checkboxes and progress bars. Interaction: Multi-level drill-down (Area -> Subject -> Topics/Playlists) with stateful checkboxes that update progress bars in real-time. Justification: This is the core interactive element, transforming a long, static table into an engaging and focused exploration and tracking tool. It structures the information logically, reduces cognitive load, and streamlines access to the study material while providing clear feedback on completion. Library/Method: Vanilla JS for DOM manipulation, state handling, and localStorage for persistence.
+        - Report Info: All subjects, topics, and video URLs with progress tracking. Goal: Organize, provide access, and track progress. Viz/Method: Interactive navigation with dynamically rendered HTML cards and lists, now with specific video links per topic, checkboxes, and progress bars. Interaction: Multi-level drill-down (Area -> Subject -> Topics/Videos) with stateful checkboxes that update progress bars in real-time. Justification: This is the core interactive element, transforming a long, static table into an engaging and focused exploration and tracking tool. It structures the information logically, reduces cognitive load, and streamlines access to the study material while providing clear feedback on completion. Library/Method: Vanilla JS for DOM manipulation, state handling, and localStorage for persistence.
     -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
@@ -95,94 +95,151 @@
     </footer>
 
     <script>
-        let studyPlanData = {
-            natureza: {
-                title: 'Ciências da Natureza', icon: '🌿',
-                subjects: {
-                    'Biologia': {
-                        playlist_url: 'https://www.youtube.com/c/BiologiaTotalcomProfJubilut/playlists',
-                        topics: [
-                            { name: 'Ecologia e Problemas Ambientais', completed: false }, { name: 'Genética e Leis de Mendel', completed: false }, { name: 'Citologia (Membrana, Organelas)', completed: false }, { name: 'Fisiologia Humana', completed: false }, { name: 'Evolução', completed: false }, { name: 'Biotecnologia', completed: false }
-                        ]
-                    },
-                    'Física': {
-                        playlist_url: 'https://www.youtube.com/c/fisicatotal/playlists',
-                        topics: [
-                            { name: 'Mecânica (Cinemática, Dinâmica, Energia)', completed: false }, { name: 'Eletrodinâmica (Circuitos, Potência)', completed: false }, { name: 'Ondulatória', completed: false }, { name: 'Termologia', completed: false }, { name: 'Óptica Geométrica', completed: false }
-                        ]
-                    },
-                    'Química': {
-                        playlist_url: 'https://www.youtube.com/c/quimicaemacao/playlists',
-                        topics: [
-                            { name: 'Química Geral (Atomística, Tabela, Ligações)', completed: false }, { name: 'Físico-Química (Soluções, Cinética, Equilíbrio)', completed: false }, { name: 'Química Orgânica (Funções, Isomeria, Reações)', completed: false }, { name: 'Eletroquímica (Pilhas e Eletrólise)', completed: false }, { name: 'Química Ambiental (Poluição, Lixo)', completed: false }
-                        ]
-                    }
-                }
-            },
-            humanas: {
-                title: 'Ciências Humanas', icon: '🌍',
-                subjects: {
-                    'História': {
-                        playlist_url: 'https://www.youtube.com/c/Parabolica/playlists',
-                        topics: [
-                            { name: 'Brasil Colônia', completed: false }, { name: 'Brasil Império', completed: false }, { name: 'República Velha', completed: false }, { name: 'Era Vargas', completed: false }, { name: 'Ditadura Militar', completed: false }, { name: 'Antiguidade Clássica (Grécia e Roma)', completed: false }, { name: 'Idade Média e Feudalismo', completed: false }, { name: 'Revoluções (Industrial e Francesa)', completed: false }, { name: 'Guerras Mundiais e Guerra Fria', completed: false }
-                        ]
-                    },
-                    'Geografia': {
-                        playlist_url: 'https://www.youtube.com/c/JeanGrafia/playlists',
-                        topics: [
-                            { name: 'Globalização e Blocos Econômicos', completed: false }, { name: 'Geografia Agrária e Urbanização', completed: false }, { name: 'Clima, Relevo e Biomas do Brasil', completed: false }, { name: 'Geopolítica Mundial', completed: false }, { name: 'Fontes de Energia', completed: false }, { name: 'Cartografia', completed: false }
-                        ]
-                    },
-                    'Filosofia': {
-                        playlist_url: 'https://www.youtube.com/c/Parabolica/playlists',
-                        topics: [
-                            { name: 'Filosofia Antiga (Pré-socráticos a Aristóteles)', completed: false }, { name: 'Filosofia Medieval', completed: false }, { name: 'Filosofia Moderna (Racionalismo e Empirismo)', completed: false }, { name: 'Filosofia Política (Contratualistas)', completed: false }, { name: 'Iluminismo e Kant', completed: false }, { name: 'Escola de Frankfurt', completed: false }
-                        ]
-                    },
-                    'Sociologia': {
-                        playlist_url: 'https://www.youtube.com/c/Parabolica/playlists',
-                        topics: [
-                            { name: 'Clássicos da Sociologia (Comte, Durkheim, Weber, Marx)', completed: false }, { name: 'Indústria Cultural e Cultura de Massa', completed: false }, { name: 'Mundo do Trabalho', completed: false }, { name: 'Cidadania e Movimentos Sociais', completed: false }, { name: 'Estratificação Social', completed: false }
-                        ]
-                    }
-                }
-            },
-            linguagens: {
-                title: 'Linguagens, Códigos e suas Tecnologias', icon: '📚',
-                subjects: {
-                    'Português': {
-                        playlist_url: 'https://www.youtube.com/c/ProfessorPamba/playlists',
-                        topics: [
-                            { name: 'Interpretação de Texto', completed: false }, { name: 'Funções da Linguagem', completed: false }, { name: 'Variação Linguística', completed: false }, { name: 'Figuras de Linguagem', completed: false }, { name: 'Coesão e Coerência', completed: false }, { name: 'Tipos e Gêneros Textuais', completed: false }
-                        ]
-                    },
-                    'Literatura': {
-                        playlist_url: 'https://www.youtube.com/c/Parabolica/playlists',
-                        topics: [
-                            { name: 'Quinhentismo, Barroco e Arcadismo', completed: false }, { name: 'Romantismo e Realismo/Naturalismo', completed: false }, { name: 'Parnasianismo e Simbolismo', completed: false }, { name: 'Pré-Modernismo', completed: false }, { name: 'Modernismo (1ª, 2ª e 3ª Fases)', completed: false }, { name: 'Tendências Contemporâneas', completed: false }
-                        ]
-                    },
-                    'Redação': {
-                        playlist_url: 'https://www.youtube.com/c/LumaEPonto/playlists',
-                        topics: [
-                            { name: 'Estrutura Dissertativo-Argumentativa', completed: false }, { name: 'Competência 1: Norma Padrão', completed: false }, { name: 'Competência 2: Tema e Repertório', completed: false }, { name: 'Competência 3: Coerência e Argumentação', completed: false }, { name: 'Competência 4: Coesão Textual', completed: false }, { name: 'Competência 5: Proposta de Intervenção', completed: false }
-                        ]
-                    }
-                }
-            },
-            matematica: {
-                title: 'Matemática e suas Tecnologias', icon: '🔢',
-                subjects: {
-                    'Matemática': {
-                        playlist_url: 'https://www.youtube.com/c/matematicario/playlists',
-                        topics: [
-                            { name: 'Matemática Básica (Operações, Frações)', completed: false }, { name: 'Razão, Proporção e Regra de Três', completed: false }, { name: 'Porcentagem e Juros', completed: false }, { name: 'Funções de 1º e 2º Grau', completed: false }, { name: 'Análise Combinatória', completed: false }, { name: 'Probabilidade', completed: false }, { name: 'Geometria Plana (Áreas)', completed: false }, { name: 'Geometria Espacial (Volumes)', completed: false }, { name: 'Estatística (Média, Moda, Mediana)', completed: false }
-                        ]
-                    }
-                }
-            }
-        };
+    let studyPlanData = {
+      natureza: {
+        title: 'Ciências da Natureza', icon: '🌿',
+        subjects: {
+          'Biologia': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PLWkLxva8dPIv0yQ4Y0sJeceKfec7IK4OA',
+            topics: [
+              { name: 'Ecologia', url: 'https://www.youtube.com/watch?v=6Ug32AjUnzc', completed: false },
+              { name: 'Genética e Mendel', url: 'https://www.youtube.com/playlist?list=PLQVUQftDIJQFW2c1dqjTOjzOKxCTs6We8', completed: false },
+              { name: 'Citologia', url: 'https://www.youtube.com/playlist?list=PLnTvCZqHfhNXibsTx1VN65pwSR0-Vxsmk', completed: false },
+              { name: 'Fisiologia Humana', url: 'https://www.youtube.com/watch?v=u9IMxDZ1KRI', completed: false },
+              { name: 'Evolução', url: 'https://www.youtube.com/watch?v=Uodc0C4jFQs', completed: false },
+              { name: 'Biotecnologia', url: 'https://www.youtube.com/watch?v=sSX5mmYi2n0', completed: false },
+            ]
+          },
+          'Física': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PLBhNirvSnz0zzI0j5jV0HEy-FquhwaWLA',
+            topics: [
+              { name: 'Mecânica', url: 'https://www.youtube.com/watch?v=FB0AW1TN6xY', completed: false },
+              { name: 'Eletrodinâmica', url: 'https://www.youtube.com/watch?v=_ciUA_P9CUc', completed: false },
+              { name: 'Ondulatória', url: 'https://www.youtube.com/watch?v=tB92JsAkXoA', completed: false },
+              { name: 'Termologia', url: 'https://www.youtube.com/watch?v=iyMabCwU7YI', completed: false },
+              { name: 'Óptica Geométrica', url: 'https://www.youtube.com/watch?v=SCTsBlmVwdA', completed: false },
+            ]
+          },
+          'Química': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PLL5oEOCl6YVnaCSeXaUMBM1Ari9JAAxlU',
+            topics: [
+              { name: 'Química Geral', url: 'https://www.youtube.com/watch?v=s_lmv1jOJyI', completed: false },
+              { name: 'Físico‑Química', url: 'https://www.youtube.com/watch?v=s_lmv1jOJyI', completed: false },
+              { name: 'Química Orgânica', url: 'https://www.youtube.com/watch?v=SsHXv5DR7sQ', completed: false },
+              { name: 'Eletroquímica', url: 'https://www.youtube.com/watch?v=N4qpddzUPhg', completed: false },
+              { name: 'Química Ambiental', url: 'https://www.youtube.com/watch?v=SsHXv5DR7sQ', completed: false },
+            ]
+          }
+        }
+      },
+      humanas: {
+        title: 'Ciências Humanas', icon: '🌍',
+        subjects: {
+          'História': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PLNMxGYUW37dPJrg40aWIu3kczpymtl3SH',
+            topics: [
+              { name: 'Brasil Colônia', url: 'https://www.youtube.com/playlist?list=PLNMxGYUW37dPJrg40aWIu3kczpymtl3SH', completed: false },
+              { name: 'Brasil Império', url: 'https://www.youtube.com/watch?v=qtwz_HKqUUg', completed: false },
+              { name: 'República Velha', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Era Vargas', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Ditadura Militar', url: 'https://www.youtube.com/watch?v=TVqGseP1tB0', completed: false },
+              { name: 'Idade Média e Feudalismo', url: 'https://www.youtube.com/watch?v=TVqGseP1tB0', completed: false },
+              { name: 'Revoluções', url: 'https://www.youtube.com/watch?v=QoSWUeL3fW0', completed: false },
+              { name: 'Guerras Mundiais / Guerra Fria', url: 'https://www.youtube.com/watch?v=QoSWUeL3fW0', completed: false },
+            ]
+          },
+          'Geografia': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PLMra4G0-Z7pPI6ZtEnVAHwzfIenbrrvcg',
+            topics: [
+              { name: 'Globalização', url: 'https://www.youtube.com/watch?v=6UnhnhEnACE', completed: false },
+              { name: 'Agrária e Urbanização', url: 'https://www.youtube.com/watch?v=6UnhnhEnACE', completed: false },
+              { name: 'Clima, Relevo e Biomas', url: 'https://www.youtube.com/watch?v=6UnhnhEnACE', completed: false },
+              { name: 'Geopolítica Mundial', url: 'https://www.youtube.com/watch?v=6UnhnhEnACE', completed: false },
+              { name: 'Fontes de Energia', url: 'https://www.youtube.com/watch?v=6UnhnhEnACE', completed: false },
+              { name: 'Cartografia', url: 'https://www.youtube.com/watch?v=6UnhnhEnACE', completed: false },
+            ]
+          },
+          'Filosofia': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PLMra4G0-Z7pPPztK7F69zHzpzAtaHEnJ5',
+            topics: [
+              { name: 'Filosofia Antiga', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Filosofia Medieval', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Filosofia Moderna', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Filosofia Política', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Iluminismo', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Escola de Frankfurt', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+            ]
+          },
+          'Sociologia': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PLMra4G0-Z7pPPztK7F69zHzpzAtaHEnJ5',
+            topics: [
+              { name: 'Clássicos', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Indústria Cultural', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Mundo do Trabalho', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Cidadania e Movimentos', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Estratificação Social', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+            ]
+          }
+        }
+      },
+      linguagens: {
+        title: 'Linguagens, Códigos e suas Tecnologias', icon: '📚',
+        subjects: {
+          'Português': {
+            playlist_url: 'https://www.youtube.com/c/redacaoegramatica/playlists',
+            topics: [
+              { name: 'Interpretação de Texto', url: 'https://www.youtube.com/watch?v=W3XrpIRTgzA', completed: false },
+              { name: 'Funções da Linguagem', url: 'https://www.youtube.com/watch?v=eN9nxNpAdhI', completed: false },
+              { name: 'Variação Linguística', url: 'https://www.youtube.com/watch?v=W3XrpIRTgzA', completed: false },
+              { name: 'Figuras de Linguagem', url: 'https://www.youtube.com/watch?v=eN9nxNpAdhI', completed: false },
+              { name: 'Coesão e Coerência', url: 'https://www.youtube.com/watch?v=W3XrpIRTgzA', completed: false },
+              { name: 'Tipos Textuais', url: 'https://www.youtube.com/watch?v=W3XrpIRTgzA', completed: false },
+            ]
+          },
+          'Literatura': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PLMra4G0-Z7pPPztK7F69zHzpzAtaHEnJ5',
+            topics: [
+              { name: 'Modernismo', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Romantismo & Realismo', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Parnasianismo', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Pré-Modernismo', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Modernismo 1ª–3ª fases', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+              { name: 'Tendências Contemporâneas', url: 'https://www.youtube.com/watch?v=qP2_rHjv4xo', completed: false },
+            ]
+          },
+          'Redação': {
+            playlist_url: 'https://www.youtube.com/watch?v=ffyFacPiQck',
+            topics: [
+              { name: 'Estrutura da Redação', url: 'https://www.youtube.com/watch?v=ffyFacPiQck', completed: false },
+              { name: 'Competência 1', url: 'https://www.youtube.com/watch?v=s6L2a1X_9a4', completed: false },
+              { name: 'Competência 2', url: 'https://www.youtube.com/watch?v=s6L2a1X_9a4', completed: false },
+              { name: 'Competência 3', url: 'https://www.youtube.com/watch?v=s6L2a1X_9a4', completed: false },
+              { name: 'Competência 4', url: 'https://www.youtube.com/watch?v=s6L2a1X_9a4', completed: false },
+              { name: 'Competência 5', url: 'https://www.youtube.com/watch?v=s6L2a1X_9a4', completed: false },
+            ]
+          }
+        }
+      },
+      matematica: {
+        title: 'Matemática e suas Tecnologias', icon: '🔢',
+        subjects: {
+          'Matemática': {
+            playlist_url: 'https://www.youtube.com/playlist?list=PL83s8LGM84J6D4Lyv5fu2PYpodc-GUGkZ',
+            topics: [
+              { name: 'Matemática Básica', url: 'https://www.youtube.com/watch?v=WWoyrI7ladY', completed: false },
+              { name: 'Razão & Proporção', url: 'https://www.youtube.com/watch?v=WWoyrI7ladY', completed: false },
+              { name: 'Porcentagem e Juros', url: 'https://www.youtube.com/watch?v=fEGFBJGHqXY', completed: false },
+              { name: 'Funções', url: 'https://www.youtube.com/watch?v=fEGFBJGHqXY', completed: false },
+              { name: 'Análise Combinatória', url: 'https://www.youtube.com/watch?v=fEGFBJGHqXY', completed: false },
+              { name: 'Probabilidade', url: 'https://www.youtube.com/watch?v=fEGFBJGHqXY', completed: false },
+              { name: 'Geometria Plana', url: 'https://www.youtube.com/watch?v=fEGFBJGHqXY', completed: false },
+              { name: 'Geometria Espacial', url: 'https://www.youtube.com/watch?v=fEGFBJGHqXY', completed: false },
+              { name: 'Estatística', url: 'https://www.youtube.com/watch?v=fEGFBJGHqXY', completed: false },
+            ]
+          }
+        }
+      }
+    };
 
         const contentArea = document.getElementById('content-area');
         const mainNav = document.getElementById('main-nav');
@@ -253,7 +310,7 @@
             contentArea.innerHTML = `
                 <header class="text-center mb-8">
                     <h2 class="text-3xl font-bold">${area.icon} ${area.title}</h2>
-                    <p class="text-gray-600 mt-2 max-w-2xl mx-auto">Explore as matérias desta grande área. Clique em uma matéria para ver a lista de conteúdos, marcar seu progresso e acessar as playlists de estudo.</p>
+                    <p class="text-gray-600 mt-2 max-w-2xl mx-auto">Explore as matérias desta grande área. Clique em uma matéria para ver a lista de conteúdos, marcar seu progresso e acessar as aulas.</p>
                 </header>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     ${Object.keys(area.subjects).map(subjectKey => {
@@ -297,15 +354,22 @@
                     <button id="back-button" class="flex items-center gap-2 mb-4 text-gray-600 hover:text-[#d37b58] font-semibold">
                         <span class="text-xl">←</span> Voltar para ${area.title}
                     </button>
-                    <h2 class="text-3xl font-bold">${area.icon} ${subjectKey}</h2>
-                    <p class="text-gray-600 mt-2">Marque os conteúdos que já estudou e clique em "Playlist" para abrir a lista de aulas da matéria no YouTube.</p>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h2 class="text-3xl font-bold">${area.icon} ${subjectKey}</h2>
+                            <p class="text-gray-600 mt-2">Marque os conteúdos que já estudou e acesse as aulas.</p>
+                        </div>
+                        <a href="${subject.playlist_url}" target="_blank" rel="noopener noreferrer" class="mt-4 sm:mt-0 text-center text-white font-bold bg-[#d37b58] px-4 py-2 rounded-lg hover:bg-[#c16a4a] transition-colors shadow">
+                            📚 Ver Playlist Completa
+                        </a>
+                    </div>
                 </header>
                 <div id="topics-list" class="space-y-3">
                     ${subject.topics.map((topic, index) => `
                         <div class="topic-item bg-white p-4 rounded-lg shadow-md flex items-center gap-4">
                             <input type="checkbox" id="topic-${areaKey}-${subjectKey}-${index}" data-area="${areaKey}" data-subject="${subjectKey}" data-topic-index="${index}" class="h-5 w-5 rounded border-gray-300 text-[#e58968] focus:ring-[#d37b58]" ${topic.completed ? 'checked' : ''}>
                             <label for="topic-${areaKey}-${subjectKey}-${index}" class="flex-1 font-semibold text-gray-700 cursor-pointer">${topic.name}</label>
-                            <a href="${subject.playlist_url}" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-white bg-[#e58968] px-3 py-1 rounded-full hover:bg-[#d37b58] transition-colors">▶️ Playlist</a>
+                            <a href="${topic.url}" target="_blank" rel="noopener noreferrer" class="text-sm font-bold text-white bg-[#e58968] px-3 py-1 rounded-full hover:bg-[#d37b58] transition-colors">▶️ Estudar Aula</a>
                         </div>
                     `).join('')}
                 </div>
